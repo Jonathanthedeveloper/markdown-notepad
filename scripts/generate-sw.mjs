@@ -1,15 +1,29 @@
 import { generateSW } from "workbox-build";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = resolve(__dirname, "../.output/public");
+const root = resolve(__dirname, "..");
+
+const candidates = [
+  resolve(root, ".vercel/output/static"),
+  resolve(root, ".output/public"),
+];
+
+const distDir = candidates.find((d) => existsSync(d));
+if (!distDir) {
+  console.error("No output directory found. Looked in:", candidates);
+  process.exit(1);
+}
+
+console.log(`Using output directory: ${distDir}`);
 
 const { count, size, warnings } = await generateSW({
   swDest: resolve(distDir, "sw.js"),
   globDirectory: distDir,
   globPatterns: ["**/*.{js,css,html,png,svg,woff2,woff,ttf}"],
-  globIgnores: ["**/sw.js"],
+  globIgnores: ["**/sw.js", "sw.js", "workbox-*.js"],
   dontCacheBustURLsMatching: /\.\w{8}\.\w+\.(js|css|png|svg|woff2|woff|ttf)$/,
   navigateFallback: "/",
   skipWaiting: true,
