@@ -3,7 +3,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = resolve(__dirname, "../dist/client");
+const distDir = resolve(__dirname, "../.vercel/output/static");
 
 const { count, size, warnings } = await generateSW({
   swDest: resolve(distDir, "sw.js"),
