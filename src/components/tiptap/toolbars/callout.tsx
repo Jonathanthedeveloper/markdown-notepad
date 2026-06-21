@@ -57,7 +57,7 @@ const CalloutToolbar = React.forwardRef<HTMLButtonElement, Parameters<typeof But
             {CALLOUT_OPTIONS.map((opt) => (
               <DropdownMenuItem
                 key={opt.type}
-                onSelect={() => editor?.chain().focus().toggleCallout(opt.type).run()}
+                onClick={() => editor?.chain().focus().toggleCallout(opt.type).run()}
               >
                 <opt.icon className="mr-2 h-4 w-4" />
                 {opt.label}

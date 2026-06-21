@@ -61,4 +61,20 @@ export const Callout = Node.create({
       "Mod-Shift-c": () => this.editor.commands.toggleCallout("info"),
     };
   },
+
+  renderMarkdown: (node) => {
+    const calloutType = node.attrs?.type ?? "info";
+    const content = (node.content ?? [])
+      .map((child: any) => {
+        if (child.type === "paragraph") {
+          return (child.content ?? []).map((n: any) => n.text ?? "").join("");
+        }
+        return "";
+      })
+      .join("\n");
+    const lines = content.split("\n");
+    const header = `> [!${calloutType}]`;
+    const body = lines.map((line: string) => `> ${line}`).join("\n");
+    return `${header}\n${body}`;
+  },
 });

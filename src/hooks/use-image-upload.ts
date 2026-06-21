@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface UseImageUploadProps {
   onUpload?: (url: string) => void;
+}
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
@@ -12,21 +21,17 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Dummy upload function that simulates a delay and returns the local preview URL
-  const dummyUpload = async (_file: File, localUrl: string): Promise<string> => {
+  const dummyUpload = async (_file: File, dataUrl: string): Promise<string> => {
     try {
       setUploading(true);
-      // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Simulate random upload errors (20% chance)
       if (Math.random() < 0.2) {
         throw new Error("Upload failed - This is a demo error");
       }
       
       setError(null);
-      // In a real implementation, this would be the URL from the server
-      return localUrl;
+      return dataUrl;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Upload failed";
       setError(errorMessage);
@@ -45,17 +50,18 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
       const file = event.target.files?.[0];
       if (file) {
         setFileName(file.name);
-        const localUrl = URL.createObjectURL(file);
-        setPreviewUrl(localUrl);
-        previewRef.current = localUrl;
 
         try {
-          const uploadedUrl = await dummyUpload(file, localUrl);
+          const dataUrl = await readFileAsDataURL(file);
+          setPreviewUrl(dataUrl);
+          previewRef.current = dataUrl;
+
+          const uploadedUrl = await dummyUpload(file, dataUrl);
           onUpload?.(uploadedUrl);
         } catch {
-          URL.revokeObjectURL(localUrl);
           setPreviewUrl(null);
           setFileName(null);
+          previewRef.current = null;
         }
       }
     },
@@ -63,9 +69,6 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
   );
 
   const handleRemove = useCallback(() => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
     setPreviewUrl(null);
     setFileName(null);
     previewRef.current = null;
@@ -73,14 +76,6 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
       fileInputRef.current.value = "";
     }
     setError(null);
-  }, [previewUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (previewRef.current) {
-        URL.revokeObjectURL(previewRef.current);
-      }
-    };
   }, []);
 
   return {
